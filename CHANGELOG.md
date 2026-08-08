@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 — 2026-08-08
+
+- Use the standard Unraid plugin manifest header.
+
 ## 0.1.0 — 2026-08-08
 
 - Native Unraid Settings page and Dashboard tile.
