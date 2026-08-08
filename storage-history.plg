@@ -1,3 +1,4 @@
+<?xml version='1.0' standalone='yes'?>
 <PLUGIN name="storage-history" author="rka" version="0.1.0" date="2026-08-08" min="7.0.0" pluginURL="https://raw.githubusercontent.com/rka/unraid-storage-history/main/storage-history.plg" support="https://github.com/rka/unraid-storage-history/issues" icon="hdd-o">
 <CHANGES>
 # Version 0.1.0 2026-08-08
