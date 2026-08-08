@@ -103,7 +103,26 @@ function sh_payload(string $range): array {
         $first = $samples[0]; $last = $samples[count($samples)-1]; $duration = ($last['timestamp'] ?? 0) - ($first['timestamp'] ?? 0);
         if ($duration >= 86400) $growth = (($last['used'] ?? 0) - ($first['used'] ?? 0)) * 86400 / $duration;
     }
-    return ['current' => $current, 'samples' => $samples, 'growth_per_day' => $growth, 'range' => $range];
+    return ['current' => $current, 'samples' => $samples, 'growth_per_day' => $growth, 'range' => $range, 'io' => sh_io_rates()];
+}
+
+/** Return aggregate physical-disk throughput. Baselines are held in RAM only. */
+function sh_io_rates(): array {
+    $read = 0; $write = 0;
+    foreach (@file('/proc/diskstats', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+        $parts = preg_split('/\s+/', trim($line));
+        if (count($parts) < 10 || !preg_match('/^(sd[a-z]+|hd[a-z]+|vd[a-z]+|nvme\d+n\d+)$/', $parts[2])) continue;
+        $read += (int)$parts[5] * 512;
+        $write += (int)$parts[9] * 512;
+    }
+    $now = microtime(true); $baseline = '/var/run/storage-history-io.json';
+    $previous = is_readable($baseline) ? json_decode((string)file_get_contents($baseline), true) : null;
+    @file_put_contents($baseline, json_encode(['time' => $now, 'read' => $read, 'write' => $write]), LOCK_EX);
+    $seconds = is_array($previous) ? max(0.1, $now - (float)($previous['time'] ?? $now)) : 1;
+    return [
+        'read_per_second' => is_array($previous) ? max(0, ($read - (int)($previous['read'] ?? $read)) / $seconds) : 0,
+        'write_per_second' => is_array($previous) ? max(0, ($write - (int)($previous['write'] ?? $write)) / $seconds) : 0,
+    ];
 }
 
 if (PHP_SAPI === 'cli') exit(sh_collect());

@@ -1,4 +1,4 @@
-Menu="Settings:0"
+Menu="StorageHistorySettingsMenu"
 Title="Storage History"
 ---
 <?PHP
@@ -30,4 +30,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <p>Default storage is on the System share, not the USB boot device.</p>
 <input type="submit" value="Apply">
 </form>
-

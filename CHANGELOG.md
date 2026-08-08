@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 — 2026-08-08
+
+- Add a dedicated Storage History settings section.
+- Improve the Dashboard chart and add live aggregate disk I/O indicators.
+
 ## 0.1.3 — 2026-08-08
 
 - Add file checksums so plugin updates replace changed files.
