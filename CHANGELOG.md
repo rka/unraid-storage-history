@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 — 2026-08-08
+
+- Add file checksums so plugin updates replace changed files.
+
 ## 0.1.2 — 2026-08-08
 
 - Record aggregate pool capacity on pool-only servers.
