@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 — 2026-08-08
+
+- Use a compact btop-style dot meter for live disk I/O.
+- Align chart and telemetry styling with the Dashboard’s restrained native look.
+
 ## 0.1.4 — 2026-08-08
 
 - Add a dedicated Storage History settings section.
