@@ -1,0 +1,11 @@
+.storage-history { max-width: 1000px; }
+.sh-ranges { display:flex; gap:6px; margin:0 0 12px; flex-wrap:wrap; }
+.sh-ranges button { border:1px solid #777; border-radius:3px; background:transparent; color:inherit; padding:4px 9px; cursor:pointer; }
+.sh-ranges button.active { background:#1f8dd6; color:#fff; border-color:#1f8dd6; }
+.sh-graph { width:100%; height:auto; min-height:130px; display:block; }
+.sh-axis { stroke:currentColor; opacity:.25; stroke-width:1; }
+.sh-line { fill:none; stroke:#22a7f0; stroke-width:3; stroke-linejoin:round; stroke-linecap:round; }
+.sh-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(125px,1fr)); gap:10px; margin-top:8px; }
+.sh-stats span { display:block; opacity:.7; font-size:.9em; }.sh-stats strong { font-size:1.05em; }
+.sh-empty { padding:16px 0; opacity:.75; }
+

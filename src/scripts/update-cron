@@ -1,0 +1,14 @@
+#!/bin/bash
+set -u
+CONFIG="/boot/config/plugins/storage-history/storage-history.cfg"
+CRON="/etc/cron.d/storage-history"
+INTERVAL="hourly"
+[[ -r "$CONFIG" ]] && INTERVAL="$(awk -F= '$1=="interval" {print $2}' "$CONFIG")"
+case "$INTERVAL" in
+  15min) schedule='*/15 * * * *' ;; 30min) schedule='*/30 * * * *' ;;
+  6hourly) schedule='0 */6 * * *' ;; 12hourly) schedule='0 */12 * * *' ;;
+  daily) schedule='12 0 * * *' ;; *) schedule='12 * * * *' ;;
+esac
+printf '%s /usr/local/emhttp/plugins/storage-history/scripts/collector >/dev/null 2>&1\n' "$schedule" > "$CRON"
+pkill -HUP crond 2>/dev/null || true
+

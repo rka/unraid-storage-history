@@ -1,0 +1,43 @@
+<!DOCTYPE PLUGIN [
+<!ENTITY name "storage-history">
+<!ENTITY version "0.1.0">
+<!ENTITY date "2026-08-08">
+<!ENTITY base "https://raw.githubusercontent.com/rka/unraid-storage-history/main">
+]>
+<PLUGIN name="&name;" author="rka" version="&version;" date="&date;" min="7.0.0" pluginURL="&base;/storage-history.plg" support="https://github.com/rka/unraid-storage-history/issues" icon="hdd-o">
+<CHANGES>
+# Version &version; &date;
+
+* Initial Storage History MVP.
+</CHANGES>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/include/history.php"><URL>&base;/src/include/history.php</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/include/api.php"><URL>&base;/src/include/api.php</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.js"><URL>&base;/src/assets/storage-history.js</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.css"><URL>&base;/src/assets/storage-history.css</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/scripts/collector"><URL>&base;/src/scripts/collector</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/scripts/update-cron"><URL>&base;/src/scripts/update-cron</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistoryDashboard.page"><URL>&base;/src/pages/StorageHistoryDashboard.page</URL></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistorySettings.page"><URL>&base;/src/pages/StorageHistorySettings.page</URL></FILE>
+<FILE Run="/bin/bash" Method="install"><INLINE><![CDATA[
+set -e
+chmod 0755 /usr/local/emhttp/plugins/storage-history/scripts/collector /usr/local/emhttp/plugins/storage-history/scripts/update-cron
+mkdir -p /boot/config/plugins/storage-history
+CFG=/boot/config/plugins/storage-history/storage-history.cfg
+if [[ ! -f "$CFG" ]]; then
+  cat > "$CFG" <<'EOF'
+enabled=yes
+interval=hourly
+retention_days=365
+data_path=/mnt/user/system/storage-history
+EOF
+fi
+/usr/local/emhttp/plugins/storage-history/scripts/update-cron
+/usr/local/emhttp/plugins/storage-history/scripts/collector || true
+]]></INLINE></FILE>
+<FILE Run="/bin/bash" Method="remove"><INLINE><![CDATA[
+rm -f /etc/cron.d/storage-history
+pkill -HUP crond 2>/dev/null || true
+rm -rf /usr/local/emhttp/plugins/storage-history
+echo "Storage History configuration and historical data were preserved."
+]]></INLINE></FILE>
+</PLUGIN>

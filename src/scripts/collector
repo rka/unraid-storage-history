@@ -1,0 +1,20 @@
+#!/bin/bash
+# Storage History collector.  It intentionally performs no work while disabled
+# or while the array state is unavailable.
+set -u
+
+PLUGIN="/usr/local/emhttp/plugins/storage-history"
+CONFIG="/boot/config/plugins/storage-history/storage-history.cfg"
+LOCK="/var/run/storage-history.lock"
+
+[[ -x /usr/bin/php || -x /usr/local/bin/php ]] || exit 0
+PHP_BIN="$(command -v php)"
+
+if [[ -r "$CONFIG" ]] && grep -q '^enabled=no$' "$CONFIG"; then
+  exit 0
+fi
+
+exec 9>"$LOCK"
+flock -n 9 || exit 0
+"$PHP_BIN" "$PLUGIN/include/history.php" collect
+
