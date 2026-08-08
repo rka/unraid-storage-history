@@ -14,7 +14,7 @@ The Dashboard’s Content Manager lets you place the **Storage History** tile wh
 
 ## What it records
 
-- Array used, free, and total capacity, based on the same emhttp values used by Dynamix.
+- Array used, free, and total capacity, based on the same emhttp values used by Dynamix. On pool-only servers, it records the aggregate of mounted pools instead.
 - An hourly sample by default, configurable from 15 minutes to daily.
 - A 365-day history by default, stored at `/mnt/user/system/storage-history/history.json` so normal sampling does not write to the USB boot device.
 

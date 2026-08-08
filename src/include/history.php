@@ -46,16 +46,30 @@ function sh_number(array $data, string $key): int { return isset($data[$key]) &&
 function sh_current_sample(): ?array {
     $disks = @parse_ini_file('/usr/local/emhttp/state/disks.ini', true, INI_SCANNER_RAW);
     if (!is_array($disks)) return null;
-    $total = 0; $free = 0; $seen = 0;
-    foreach ($disks as $disk) {
+    $arrayTotal = 0; $arrayFree = 0; $arraySeen = 0;
+    $poolTotal = 0; $poolFree = 0; $poolNames = [];
+    foreach ($disks as $name => $disk) {
         if (($disk['type'] ?? '') !== 'Data' || !isset($disk['fsSize'], $disk['fsFree'])) continue;
         if (!is_numeric($disk['fsSize']) || !is_numeric($disk['fsFree'])) continue;
-        $total += sh_number($disk, 'fsSize') * 1024;
-        $free += sh_number($disk, 'fsFree') * 1024;
-        $seen++;
+        $arrayTotal += sh_number($disk, 'fsSize') * 1024;
+        $arrayFree += sh_number($disk, 'fsFree') * 1024;
+        $arraySeen++;
     }
-    if ($seen === 0 || $total <= 0) return null;
-    return ['timestamp' => time(), 'total' => $total, 'used' => max(0, $total - $free), 'free' => $free];
+    foreach ($disks as $name => $disk) {
+        if (($disk['type'] ?? '') !== 'Cache' || !isset($disk['fsSize'], $disk['fsFree'])) continue;
+        if (!is_numeric($disk['fsSize']) || !is_numeric($disk['fsFree'])) continue;
+        $poolTotal += sh_number($disk, 'fsSize') * 1024;
+        $poolFree += sh_number($disk, 'fsFree') * 1024;
+        $poolNames[] = $name;
+    }
+    if ($arraySeen > 0 && $arrayTotal > 0) {
+        $total = $arrayTotal; $free = $arrayFree; $source = 'array';
+    } elseif ($poolTotal > 0) {
+        // Pool-only servers are a supported Unraid configuration.  Aggregate
+        // pool headers, not member disks, to avoid counting a pool twice.
+        $total = $poolTotal; $free = $poolFree; $source = count($poolNames) === 1 ? 'pool:' . $poolNames[0] : 'pools';
+    } else return null;
+    return ['timestamp' => time(), 'total' => $total, 'used' => max(0, $total - $free), 'free' => $free, 'source' => $source];
 }
 
 function sh_collect(): int {
@@ -93,4 +107,3 @@ function sh_payload(string $range): array {
 }
 
 if (PHP_SAPI === 'cli') exit(sh_collect());
-
