@@ -15,8 +15,13 @@ function sh_config(): array {
         'retention_days' => '365',
         'data_path' => '/mnt/user/system/storage-history',
     ];
-    $saved = is_readable(SH_CONFIG) ? (parse_ini_file(SH_CONFIG, false, INI_SCANNER_RAW) ?: []) : [];
-    return array_merge($defaults, $saved);
+    $saved = is_readable(SH_CONFIG) ? (@parse_ini_file(SH_CONFIG, false, INI_SCANNER_RAW) ?: []) : [];
+    $config = array_merge($defaults, $saved);
+    $config['enabled'] = ($config['enabled'] ?? '') === 'no' ? 'no' : 'yes';
+    $config['interval'] = in_array($config['interval'] ?? '', ['15min','30min','hourly','6hourly','12hourly','daily'], true) ? $config['interval'] : 'hourly';
+    $config['retention_days'] = (string)max(30, min(1825, (int)($config['retention_days'] ?? 365)));
+    if (!sh_valid_data_path((string)($config['data_path'] ?? ''))) $config['data_path'] = $defaults['data_path'];
+    return $config;
 }
 
 function sh_data_root(array $config): string { return rtrim((string)$config['data_path'], '/'); }
@@ -154,8 +159,16 @@ function sh_read_samples(array $config, int $cutoff = 0): array {
 function sh_history_bounds(array $config): array {
     $files = sh_segment_files($config);
     if (!$files) return [0, 0];
-    $first = sh_read_segment($files[0]); $last = sh_read_segment($files[count($files) - 1]);
-    return [$first ? $first[0]['timestamp'] : 0, $last ? $last[count($last) - 1]['timestamp'] : 0];
+    $firstTimestamp = 0; $lastTimestamp = 0;
+    foreach ($files as $file) {
+        $samples = sh_read_segment($file);
+        if ($samples) { $firstTimestamp = $samples[0]['timestamp']; break; }
+    }
+    foreach (array_reverse($files) as $file) {
+        $samples = sh_read_segment($file);
+        if ($samples) { $lastTimestamp = $samples[count($samples) - 1]['timestamp']; break; }
+    }
+    return [$firstTimestamp, $lastTimestamp];
 }
 
 function sh_append_sample(array $config, array $sample): bool {
