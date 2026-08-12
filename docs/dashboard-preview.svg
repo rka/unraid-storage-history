@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="610" viewBox="0 0 920 610" role="img" aria-labelledby="title description">
+  <title id="title">Storage History tile on the Unraid Dashboard</title>
+  <desc id="description">A preview showing 66 percent capacity used, an adaptive history chart, capacity values, range controls, collection status, and live disk input and output meters.</desc>
+  <defs>
+    <linearGradient id="area" x1="0" x2="0" y1="0" y2="1">
+      <stop stop-color="#1f8fc8" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#1f8fc8" stop-opacity=".03"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity=".12"/>
+    </filter>
+  </defs>
+  <rect width="920" height="610" fill="#b8babb"/>
+  <rect x="34" y="28" width="852" height="554" fill="#b8babb" stroke="#85888a" filter="url(#shadow)"/>
+
+  <g fill="none" stroke="#242628" stroke-width="3">
+    <rect x="58" y="53" width="40" height="45"/>
+    <line x1="65" y1="64" x2="91" y2="64"/><line x1="65" y1="76" x2="91" y2="76"/><line x1="65" y1="88" x2="91" y2="88"/>
+  </g>
+  <text x="120" y="82" fill="#242628" font-family="Arial, sans-serif" font-size="25" font-weight="700">STORAGE HISTORY</text>
+
+  <g font-family="Arial, sans-serif" fill="#252729">
+    <text x="62" y="137" fill="#666a6c" font-size="12" letter-spacing="1.2">CAPACITY</text>
+    <text x="132" y="138" font-size="25" font-weight="700">66%</text>
+    <text x="180" y="138" fill="#666a6c" font-size="14">used</text>
+    <text x="858" y="138" fill="#1f789f" font-size="13" text-anchor="end">+11.29 GB/day</text>
+  </g>
+  <rect x="62" y="151" width="796" height="5" rx="2.5" fill="#96999a" opacity=".45"/>
+  <rect x="62" y="151" width="525" height="5" rx="2.5" fill="#1f8fc8"/>
+
+  <text x="62" y="189" fill="#666a6c" font-family="Arial, sans-serif" font-size="11" letter-spacing="1.1">USED-SPACE HISTORY</text>
+  <g font-family="Arial, sans-serif" font-size="11" text-anchor="middle">
+    <rect x="590" y="171" width="138" height="27" rx="3" fill="none" stroke="#8f9294"/>
+    <line x1="624.5" y1="171" x2="624.5" y2="198" stroke="#8f9294"/><line x1="659" y1="171" x2="659" y2="198" stroke="#8f9294"/><line x1="693.5" y1="171" x2="693.5" y2="198" stroke="#8f9294"/>
+    <text x="607" y="189" fill="#343638">24h</text><text x="642" y="189" fill="#343638">7d</text>
+    <rect x="659" y="171" width="34.5" height="27" fill="#1f8fc8"/><text x="676" y="189" fill="#fff">30d</text><text x="711" y="189" fill="#343638">1y</text>
+  </g>
+  <circle cx="754" cy="184" r="5" fill="#4aa564"/><text x="766" y="189" fill="#666a6c" font-family="Arial, sans-serif" font-size="11">Current</text>
+
+  <g stroke="#5f6365" stroke-width="1" opacity=".25" stroke-dasharray="3 7">
+    <line x1="62" y1="231" x2="858" y2="231"/><line x1="62" y1="310" x2="858" y2="310"/>
+  </g>
+  <line x1="62" y1="390" x2="858" y2="390" stroke="#5f6365" opacity=".38"/>
+  <path d="M62 353 L102 354 L142 352 L182 350 L222 348 L262 346 L302 342 L342 337 L382 338 L422 334 L462 329 L502 310 L542 307 L582 300 L622 296 L662 270 L702 266 L742 248 L782 243 L822 230 L858 224 L858 390 L62 390 Z" fill="url(#area)"/>
+  <path d="M62 353 L102 354 L142 352 L182 350 L222 348 L262 346 L302 342 L342 337 L382 338 L422 334 L462 329 L502 310 L542 307 L582 300 L622 296 L662 270 L702 266 L742 248 L782 243 L822 230 L858 224" fill="none" stroke="#1f8fc8" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="858" cy="224" r="5" fill="#1f8fc8"/>
+  <g fill="#616567" font-family="Arial, sans-serif" font-size="11">
+    <text x="62" y="218">3.18 TB</text><text x="62" y="410">7/13/2026</text><text x="858" y="410" text-anchor="end">Now</text>
+  </g>
+
+  <g font-family="Arial, sans-serif">
+    <text x="62" y="447" fill="#666a6c" font-size="11" letter-spacing="1">USED</text><text x="62" y="472" fill="#252729" font-size="18" font-weight="700">3.17 TB</text>
+    <text x="345" y="447" fill="#666a6c" font-size="11" letter-spacing="1">FREE</text><text x="345" y="472" fill="#252729" font-size="18" font-weight="700">1.64 TB</text>
+    <text x="627" y="447" fill="#666a6c" font-size="11" letter-spacing="1">TOTAL</text><text x="627" y="472" fill="#252729" font-size="18" font-weight="700">4.81 TB</text>
+  </g>
+
+  <line x1="62" y1="500" x2="858" y2="500" stroke="#777b7d" opacity=".35"/>
+  <text x="62" y="537" fill="#666a6c" font-family="Arial, sans-serif" font-size="10" letter-spacing="1">LIVE I/O</text>
+  <text x="145" y="537" fill="#303234" font-family="Arial, sans-serif" font-size="12">↓ 180 KB/s</text>
+  <text x="270" y="540" fill="#1f8fc8" font-family="monospace" font-size="18">⣀⣀⣀⣄⣀⣆⣀⣀⣧⣄⣀⣀⣀⣀⣇⣀⣄⣀</text>
+  <text x="550" y="537" fill="#303234" font-family="Arial, sans-serif" font-size="12">↑ 92 KB/s</text>
+  <text x="660" y="540" fill="#65727b" font-family="monospace" font-size="18">⣀⣀⣄⣀⣀⣀⣆⣀⣀⣀⣄⣀</text>
+</svg>
