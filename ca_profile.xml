@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CommunityApplications>
+  <Profile>
+    Storage History is a native Unraid Dashboard plugin that records array or pool capacity over time. It provides adaptive history charts, growth estimates, collection-health states, and live aggregate disk I/O without Docker or an external monitoring service.
+  </Profile>
+  <WebPage>https://github.com/rka/unraid-storage-history</WebPage>
+  <Forum>https://github.com/rka/unraid-storage-history/issues</Forum>
+</CommunityApplications>

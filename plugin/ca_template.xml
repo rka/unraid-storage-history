@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Plugin>
+  <Name>Storage History</Name>
+  <PluginURL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/storage-history.plg</PluginURL>
+  <PluginAuthor>rka</PluginAuthor>
+  <Description>
+Storage History adds a native capacity-history tile to the Unraid Dashboard for traditional arrays and pool-only systems.
+
+Features:
+- Adaptive used-space history with hover details and selectable ranges
+- Current used, free, and total capacity with average daily growth
+- Remaining-capacity estimates after enough history has been collected
+- Live aggregate physical-disk read and write meters
+- Collection-health states and configurable sampling and retention
+  </Description>
+  <Icon>hdd-o</Icon>
+  <Category>Tools: System:</Category>
+  <Support>https://github.com/rka/unraid-storage-history/issues</Support>
+  <Project>https://github.com/rka/unraid-storage-history</Project>
+  <MinVer>7.0.0</MinVer>
+</Plugin>
