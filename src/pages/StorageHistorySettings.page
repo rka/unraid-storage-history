@@ -11,13 +11,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $interval = in_array($_POST['interval'] ?? '', $intervals, true) ? $_POST['interval'] : 'hourly';
   $days = max(30, min(1825, (int)($_POST['retention_days'] ?? 365)));
   $path = trim((string)($_POST['data_path'] ?? '/mnt/user/system/storage-history'));
-  if (!str_starts_with($path, '/mnt/')) { $message = 'Data path must be under /mnt.'; }
+  if (!sh_valid_data_path($path)) { $message = 'Enter a normal path below /mnt without traversal, control, or configuration characters.'; }
   else {
-    $contents = "enabled=$enabled\ninterval=$interval\nretention_days=$days\ndata_path=$path\n";
-    @mkdir(dirname(SH_CONFIG), 0755, true);
-    file_put_contents(SH_CONFIG, $contents, LOCK_EX);
-    $defaults = sh_config(); $message = 'Settings saved. The schedule is refreshed automatically.';
-    @exec('/usr/local/emhttp/plugins/storage-history/scripts/update-cron');
+    $saved = sh_write_config(['enabled'=>$enabled, 'interval'=>$interval, 'retention_days'=>$days, 'data_path'=>$path]);
+    if ($saved) {
+      $defaults = sh_config(); $message = 'Settings saved. The schedule is refreshed automatically.';
+      @exec('/usr/local/emhttp/plugins/storage-history/scripts/update-cron');
+    } else $message = 'Settings could not be saved.';
   }
 }
 ?>

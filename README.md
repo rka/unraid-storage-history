@@ -43,9 +43,9 @@ The default data path keeps normal sampling writes off the USB boot device.
 
 ## Data and status
 
-Capacity history is stored in `history.json` at the configured data path. Array values come from the same emhttp state used by Dynamix; on pool-only systems, mounted pool capacity is aggregated without double-counting pool members.
+Capacity history is stored as append-only monthly JSON Lines files under `history.d` at the configured data path. Existing `history.json` data is migrated automatically and retained as `history.json.migrated` for recovery. Expired samples are compacted once per day. Array values come from the same emhttp state used by Dynamix; on pool-only systems, mounted pool capacity is aggregated without double-counting pool members.
 
-Live I/O is calculated from Linux disk statistics, retained only in memory by the open Dashboard, and resets when the page reloads. It is not written to capacity history.
+Live I/O is calculated from Linux disk statistics, retained only in memory by the open Dashboard, and resets when the page reloads. It is not written to capacity history. The small I/O response refreshes every five seconds; bounded chart data refreshes once per minute, and polling pauses while the Dashboard tab is hidden.
 
 Collection states mean:
 

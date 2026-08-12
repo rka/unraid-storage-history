@@ -5,7 +5,7 @@ $pluginname = 'storage-history';
 $mytiles[$pluginname]['column3'] = <<<'HTML'
 <tbody title="_(Storage capacity history)_">
   <tr><td><span class="tile-header"><span class="tile-header-left"><i class="icon-disks f32"></i><div class="section"><h3 class="tile-header-main">Storage History</h3></div></span></span></td></tr>
-  <tr><td><link rel="stylesheet" href="/plugins/storage-history/assets/storage-history.css?v=0.2.0"><div class="storage-history" data-storage-history data-range="30d" data-compact="yes"><div class="sh-empty">Loading…</div></div><script src="/plugins/storage-history/assets/storage-history.js?v=0.2.0"></script></td></tr>
+  <tr><td><link rel="stylesheet" href="/plugins/storage-history/assets/storage-history.css?v=0.3.0"><div class="storage-history" data-storage-history data-range="30d" data-compact="yes"><div class="sh-empty">Loading…</div></div><script src="/plugins/storage-history/assets/storage-history.js?v=0.3.0"></script></td></tr>
 </tbody>
 HTML;
 ?>

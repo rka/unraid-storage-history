@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-08-12
+
+- Store capacity samples in append-only monthly segments and migrate legacy history without deleting its backup.
+- Bound, validate, and downsample history reads while preserving chart extrema.
+- Split live I/O from history polling, pause background-tab work, and avoid rebuilding the tile every five seconds.
+- Harden settings paths and atomic writes, serialize I/O baselines, restrict file permissions, and use immutable release assets.
+- Add automated syntax, behavior, and release-manifest validation.
+
 ## 0.2.1 — 2026-08-12
 
 - Correct normalized source checksums for reliable UI and CLI updates.

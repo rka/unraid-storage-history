@@ -99,8 +99,13 @@
       const bounds = svg.getBoundingClientRect();
       const pointerX = Math.max(0, Math.min(bounds.width, event.clientX - bounds.left));
       const time = minTime + pointerX / Math.max(1, bounds.width) * (maxTime - minTime);
-      let index = 0;
-      for (let i = 1; i < samples.length; i++) if (Math.abs(Number(samples[i].timestamp) - time) < Math.abs(Number(samples[index].timestamp) - time)) index = i;
+      let low = 0, high = samples.length - 1;
+      while (low < high) {
+        const middle = Math.floor((low + high) / 2);
+        if (Number(samples[middle].timestamp) < time) low = middle + 1; else high = middle;
+      }
+      let index = low;
+      if (index > 0 && Math.abs(Number(samples[index - 1].timestamp) - time) <= Math.abs(Number(samples[index].timestamp) - time)) index--;
       const sample = samples[index], previous = index ? samples[index - 1] : null;
       const x = left + (Number(sample.timestamp) - minTime) / Math.max(1, maxTime - minTime) * (viewWidth - left - right);
       const y = top + (maxY - Number(sample.used || 0)) / Math.max(1, maxY - minY) * (viewHeight - top - bottom);
@@ -128,10 +133,7 @@
   function render(root, payload) {
     const current = payload.current;
     if (!current) { root.innerHTML = '<div class="sh-empty">Storage capacity is unavailable while the array or pools are stopped.</div>'; return; }
-    const io = payload.io || {};
-    const ioHistory = root._shIo || {read:[], write:[]};
-    ioHistory.read.push(Number(io.read_per_second || 0)); ioHistory.write.push(Number(io.write_per_second || 0));
-    ioHistory.read = ioHistory.read.slice(-32); ioHistory.write = ioHistory.write.slice(-32); root._shIo = ioHistory;
+    const ioHistory = root._shIo || {read:[], write:[], currentRead:0, currentWrite:0}; root._shIo = ioHistory;
     const percent = current.total ? Math.max(0, Math.min(100, Number(current.used) / Number(current.total) * 100)) : 0;
     const growthText = growthContext(payload, current);
     const growthNeutral = !Number.isFinite(Number(payload.growth_per_day)) || Math.abs(Number(payload.growth_per_day)) < 1;
@@ -141,23 +143,56 @@
       '<div class="sh-chart-head"><span class="sh-chart-title">Used-space history</span>' + rangeButtons(payload.range) + historyStatus(payload.history) + '</div>' +
       graph(payload.samples || []) +
       '<div class="sh-stats"><div><span>Used</span><strong>' + bytes(current.used) + '</strong></div><div><span>Free</span><strong>' + bytes(current.free) + '</strong></div><div><span>Total</span><strong>' + bytes(current.total) + '</strong></div></div>' +
-      '<div class="sh-live"><span class="sh-live-title">Live I/O</span><span class="sh-io sh-io-read"><b>↓ ' + bytes(io.read_per_second) + '/s</b>' + dotGraph(ioHistory.read) + '</span><span class="sh-io sh-io-write"><b>↑ ' + bytes(io.write_per_second) + '/s</b>' + dotGraph(ioHistory.write) + '</span></div>';
+      '<div class="sh-live"><span class="sh-live-title">Live I/O</span><span class="sh-io sh-io-read"><b class="sh-io-value">↓ ' + bytes(ioHistory.currentRead) + '/s</b>' + dotGraph(ioHistory.read) + '</span><span class="sh-io sh-io-write"><b class="sh-io-value">↑ ' + bytes(ioHistory.currentWrite) + '/s</b>' + dotGraph(ioHistory.write) + '</span></div>';
     root.dataset.loaded = 'yes';
-    root.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click', () => { root.dataset.range = button.dataset.range; load(root, button.dataset.range); }));
+    root.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click', () => { root.dataset.range = button.dataset.range; loadHistory(root, button.dataset.range); }));
     bindGraph(root, payload.samples || []);
   }
 
-  function load(root, range) {
+  function updateIo(root, io) {
+    const read = Number(io.read_per_second || 0), write = Number(io.write_per_second || 0);
+    const ioHistory = root._shIo || {read:[], write:[], currentRead:0, currentWrite:0};
+    ioHistory.currentRead = read; ioHistory.currentWrite = write;
+    ioHistory.read.push(read); ioHistory.write.push(write);
+    ioHistory.read = ioHistory.read.slice(-32); ioHistory.write = ioHistory.write.slice(-32); root._shIo = ioHistory;
+    const readRoot = root.querySelector('.sh-io-read'), writeRoot = root.querySelector('.sh-io-write');
+    if (!readRoot || !writeRoot) return;
+    readRoot.querySelector('.sh-io-value').textContent = '↓ ' + bytes(read) + '/s';
+    writeRoot.querySelector('.sh-io-value').textContent = '↑ ' + bytes(write) + '/s';
+    readRoot.querySelector('.sh-dotgraph').outerHTML = dotGraph(ioHistory.read);
+    writeRoot.querySelector('.sh-dotgraph').outerHTML = dotGraph(ioHistory.write);
+  }
+
+  function loadHistory(root, range) {
+    if (document.hidden) return;
     if (!root.dataset.loaded) root.innerHTML = '<div class="sh-empty">Loading…</div>';
-    fetch(endpoint + '?range=' + encodeURIComponent(range), {cache:'no-store'})
+    if (root._shHistoryController) root._shHistoryController.abort();
+    const controller = new AbortController(); root._shHistoryController = controller;
+    fetch(endpoint + '?mode=history&range=' + encodeURIComponent(range), {cache:'no-store', signal:controller.signal})
       .then(response => response.ok ? response.json() : Promise.reject())
-      .then(payload => render(root, payload))
-      .catch(() => { if (!root.dataset.loaded) root.innerHTML = '<div class="sh-empty">Unable to load storage history.</div>'; });
+      .then(payload => { render(root, payload); loadIo(root); })
+      .catch(error => { if (error.name !== 'AbortError' && !root.dataset.loaded) root.innerHTML = '<div class="sh-empty">Unable to load storage history.</div>'; });
+  }
+
+  function loadIo(root) {
+    if (document.hidden || !root.dataset.loaded || root._shIoPending) return;
+    root._shIoPending = true;
+    fetch(endpoint + '?mode=io', {cache:'no-store'})
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .then(payload => updateIo(root, payload.io || {}))
+      .catch(() => {})
+      .finally(() => { root._shIoPending = false; });
   }
 
   document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-storage-history]').forEach(root => {
     root.dataset.range = root.dataset.range || '30d';
-    load(root, root.dataset.range);
-    if (root.dataset.compact === 'yes') setInterval(() => load(root, root.dataset.range), 5000);
+    loadHistory(root, root.dataset.range);
+    if (root.dataset.compact === 'yes') {
+      setInterval(() => loadHistory(root, root.dataset.range), 60000);
+      setInterval(() => loadIo(root), 5000);
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) { loadHistory(root, root.dataset.range); loadIo(root); }
+      });
+    }
   }));
 }());
