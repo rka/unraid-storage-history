@@ -103,6 +103,8 @@ function sh_atomic_lines(string $path, array $samples): bool {
 
 function sh_migrate_legacy(array $config): bool {
     $target = sh_history_dir($config);
+    $legacy = sh_data_file($config);
+    if (is_file($legacy . '.migrated')) @chmod($legacy . '.migrated', 0600);
     if (is_dir($target)) return true;
     $root = sh_data_root($config);
     if (!is_dir($root) && !mkdir($root, 0700, true) && !is_dir($root)) return false;
@@ -110,7 +112,7 @@ function sh_migrate_legacy(array $config): bool {
     $lock = @fopen('/var/run/storage-history-migrate.lock', 'c+');
     if ($lock === false || !flock($lock, LOCK_EX)) { if (is_resource($lock)) fclose($lock); return false; }
     if (is_dir($target)) { flock($lock, LOCK_UN); fclose($lock); return true; }
-    $legacy = sh_data_file($config); $groups = [];
+    $groups = [];
     if (is_readable($legacy)) {
         $size = filesize($legacy);
         if ($size === false || $size > SH_MAX_LEGACY_BYTES) { flock($lock, LOCK_UN); fclose($lock); return false; }

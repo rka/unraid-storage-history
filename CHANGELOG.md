@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2 — 2026-08-12
+
+- Apply private permissions to legacy backups created by earlier migration runs.
+
 ## 0.3.1 — 2026-08-12
 
 - Restrict the preserved legacy migration backup to owner-only access.
