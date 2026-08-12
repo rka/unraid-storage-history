@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 — 2026-08-12
+
+- Restrict the preserved legacy migration backup to owner-only access.
+
 ## 0.3.0 — 2026-08-12
 
 - Store capacity samples in append-only monthly segments and migrate legacy history without deleting its backup.

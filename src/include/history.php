@@ -128,6 +128,7 @@ function sh_migrate_legacy(array $config): bool {
     if ($ok) $ok = @rename($temporary, $target);
     if (!$ok) { foreach (glob($temporary . '/*') ?: [] as $file) @unlink($file); @rmdir($temporary); }
     if ($ok && is_file($legacy) && !is_file($legacy . '.migrated')) @rename($legacy, $legacy . '.migrated');
+    if ($ok && is_file($legacy . '.migrated')) @chmod($legacy . '.migrated', 0600);
     flock($lock, LOCK_UN); fclose($lock);
     return $ok;
 }
