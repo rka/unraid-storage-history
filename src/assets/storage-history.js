@@ -1,32 +1,163 @@
 (function () {
   'use strict';
+
   const endpoint = '/plugins/storage-history/include/api.php';
   const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  function bytes(value) { let i = 0; value = Number(value || 0); while (value >= 1000 && i < units.length - 1) { value /= 1000; i++; } return value.toFixed(value >= 100 || i === 0 ? 0 : 2) + ' ' + units[i]; }
-  function growth(value) { if (!Number.isFinite(value)) return '—'; return (value >= 0 ? '+' : '−') + bytes(Math.abs(value)) + '/day'; }
-  function escape(v) { return String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function graph(samples) {
-    if (samples.length < 2) return '<div class="sh-empty">History will appear after two samples.</div>';
-    const width = 720, height = 165, pad = 20;
-    const minX = samples[0].timestamp, maxX = samples[samples.length - 1].timestamp;
-    const maxY = Math.max(...samples.map(s => Number(s.total || s.used)), 1);
-    const coords = samples.map(s => [pad + (s.timestamp - minX) / Math.max(1, maxX - minX) * (width - 2 * pad), height - pad - Number(s.used) / maxY * (height - 2 * pad)]);
-    const points = coords.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-    const area = pad+','+(height-pad)+' '+points+' '+(width-pad)+','+(height-pad);
-    const title = escape(new Date(samples[samples.length - 1].timestamp * 1000).toLocaleString());
-    return '<svg class="sh-graph" viewBox="0 0 '+width+' '+height+'" role="img" aria-label="Storage used over time"><title>'+title+'</title><defs><linearGradient id="sh-fill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#22a7f0" stop-opacity=".34"/><stop offset="1" stop-color="#22a7f0" stop-opacity=".02"/></linearGradient></defs><line x1="'+pad+'" y1="'+(height*.34)+'" x2="'+(width-pad)+'" y2="'+(height*.34)+'" class="sh-grid"/><line x1="'+pad+'" y1="'+(height*.66)+'" x2="'+(width-pad)+'" y2="'+(height*.66)+'" class="sh-grid"/><line x1="'+pad+'" y1="'+(height-pad)+'" x2="'+(width-pad)+'" y2="'+(height-pad)+'" class="sh-axis"/><polygon points="'+area+'" class="sh-area"/><polyline points="'+points+'" class="sh-line"/><circle cx="'+coords[coords.length-1][0].toFixed(1)+'" cy="'+coords[coords.length-1][1].toFixed(1)+'" r="4" class="sh-dot"/><text x="'+pad+'" y="14" class="sh-label">'+bytes(maxY)+'</text><text x="'+pad+'" y="'+(height-3)+'" class="sh-label">'+new Date(minX*1000).toLocaleDateString()+'</text><text x="'+(width-pad)+'" y="'+(height-3)+'" text-anchor="end" class="sh-label">Now</text></svg>';
+  const ranges = ['24h', '7d', '30d', '1y'];
+
+  function bytes(value) {
+    let i = 0;
+    value = Number(value || 0);
+    while (value >= 1000 && i < units.length - 1) { value /= 1000; i++; }
+    return value.toFixed(value >= 100 || i === 0 ? 0 : 2) + ' ' + units[i];
   }
-  function dotGraph(values) { const glyphs = '⣀⣀⣄⣆⣇⣧⣷⣿'; const max = Math.max(...values, 1); return '<span class="sh-dotgraph" aria-hidden="true">'+values.map(value => '<i>'+glyphs[Math.min(glyphs.length - 1, Math.round(value / max * (glyphs.length - 1)))]+ '</i>').join('')+'</span>'; }
-  function render(root, payload, compact) {
+
+  function signedBytes(value) {
+    if (!Number.isFinite(value)) return 'Building history';
+    if (Math.abs(value) < 1) return 'No net growth';
+    return (value > 0 ? '+' : '−') + bytes(Math.abs(value)) + '/day';
+  }
+
+  function escape(value) {
+    return String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
+  }
+
+  function rangeButtons(active) {
+    return '<div class="sh-ranges" role="group" aria-label="History range">' + ranges.map(range =>
+      '<button type="button" data-range="' + range + '" class="' + (range === active ? 'active' : '') + '" aria-pressed="' + (range === active) + '">' + range + '</button>'
+    ).join('') + '</div>';
+  }
+
+  function historyStatus(history) {
+    const status = history && history.status ? history.status : 'collecting';
+    const labels = {ready:'Current', collecting:'Collecting', stale:'Stale', paused:'Paused'};
+    const last = history && history.last_sample_at ? 'Last sample ' + new Date(history.last_sample_at * 1000).toLocaleString() : 'Waiting for the first scheduled samples';
+    return '<span class="sh-status sh-status-' + status + '" title="' + escape(last) + '"><i></i>' + (labels[status] || 'Collecting') + '</span>';
+  }
+
+  function growthContext(payload, current) {
+    const daily = Number(payload.growth_per_day);
+    const span = Number(payload.history && payload.history.range_span_seconds || 0);
+    let text = signedBytes(daily);
+    if (Number.isFinite(daily) && daily > 0 && span >= 7 * 86400 && Number(current.free) > 0) {
+      const days = Number(current.free) / daily;
+      const remaining = days < 730 ? Math.max(1, Math.round(days)) + ' days remaining' : (days / 365).toFixed(days < 3650 ? 1 : 0) + ' years remaining';
+      text += ' · ~' + remaining;
+    }
+    return text;
+  }
+
+  function graph(samples) {
+    if (samples.length < 2) return '<div class="sh-empty sh-empty-chart">No history in this range yet. Try a longer range.</div>';
+
+    const width = 720, height = 170, left = 22, right = 12, top = 18, bottom = 22;
+    const used = samples.map(sample => Number(sample.used || 0));
+    const total = Math.max(...samples.map(sample => Number(sample.total || 0)), ...used, 1);
+    const observedMin = Math.min(...used), observedMax = Math.max(...used);
+    const desiredSpan = Math.max((observedMax - observedMin) * 1.45, total * 0.005, 1000000000);
+    let minY = Math.max(0, observedMin - desiredSpan * 0.22);
+    let maxY = Math.min(total, Math.max(observedMax + desiredSpan * 0.22, minY + desiredSpan));
+    if (maxY - minY < desiredSpan) minY = Math.max(0, maxY - desiredSpan);
+    const ySpan = Math.max(1, maxY - minY);
+    const minX = Number(samples[0].timestamp), maxX = Number(samples[samples.length - 1].timestamp);
+    const plotWidth = width - left - right, plotHeight = height - top - bottom;
+    const coords = samples.map(sample => [
+      left + (Number(sample.timestamp) - minX) / Math.max(1, maxX - minX) * plotWidth,
+      top + (maxY - Number(sample.used || 0)) / ySpan * plotHeight
+    ]);
+    const points = coords.map(point => point[0].toFixed(1) + ',' + point[1].toFixed(1)).join(' ');
+    const area = left + ',' + (height - bottom) + ' ' + points + ' ' + (width - right) + ',' + (height - bottom);
+    const summary = bytes(used[used.length - 1]) + ' used on ' + new Date(maxX * 1000).toLocaleString();
+
+    return '<div class="sh-graph-wrap"><svg class="sh-graph" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Storage used over time"><title>' + escape(summary) + '</title>' +
+      '<defs><linearGradient id="sh-fill" x1="0" x2="0" y1="0" y2="1"><stop stop-color="currentColor" stop-opacity=".28"/><stop offset="1" stop-color="currentColor" stop-opacity=".025"/></linearGradient></defs>' +
+      '<line x1="' + left + '" y1="' + top + '" x2="' + (width - right) + '" y2="' + top + '" class="sh-grid"/><line x1="' + left + '" y1="' + (top + plotHeight / 2) + '" x2="' + (width - right) + '" y2="' + (top + plotHeight / 2) + '" class="sh-grid"/><line x1="' + left + '" y1="' + (height - bottom) + '" x2="' + (width - right) + '" y2="' + (height - bottom) + '" class="sh-axis"/>' +
+      '<polygon points="' + area + '" class="sh-area"/><polyline points="' + points + '" class="sh-line"/>' +
+      '<g class="sh-crosshair"><line y1="' + top + '" y2="' + (height - bottom) + '"/><circle r="4"/></g>' +
+      '<circle cx="' + coords[coords.length - 1][0].toFixed(1) + '" cy="' + coords[coords.length - 1][1].toFixed(1) + '" r="3.5" class="sh-dot"/>' +
+      '<text x="' + left + '" y="12" class="sh-label">' + bytes(maxY) + '</text><text x="' + left + '" y="' + (height - 5) + '" class="sh-label">' + new Date(minX * 1000).toLocaleDateString() + '</text><text x="' + (width - right) + '" y="' + (height - 5) + '" text-anchor="end" class="sh-label">Now</text></svg><div class="sh-tooltip" role="status"></div></div>';
+  }
+
+  function bindGraph(root, samples) {
+    const svg = root.querySelector('.sh-graph');
+    const tooltip = root.querySelector('.sh-tooltip');
+    const crosshair = root.querySelector('.sh-crosshair');
+    if (!svg || !tooltip || !crosshair || samples.length < 2) return;
+    const marker = crosshair.querySelector('circle');
+    const line = crosshair.querySelector('line');
+    const minTime = Number(samples[0].timestamp), maxTime = Number(samples[samples.length - 1].timestamp);
+    const viewWidth = 720, left = 22, right = 12, top = 18, bottom = 22, viewHeight = 170;
+    const values = samples.map(sample => Number(sample.used || 0));
+    const total = Math.max(...samples.map(sample => Number(sample.total || 0)), ...values, 1);
+    const observedMin = Math.min(...values), observedMax = Math.max(...values);
+    const desiredSpan = Math.max((observedMax - observedMin) * 1.45, total * 0.005, 1000000000);
+    let minY = Math.max(0, observedMin - desiredSpan * .22);
+    let maxY = Math.min(total, Math.max(observedMax + desiredSpan * .22, minY + desiredSpan));
+    if (maxY - minY < desiredSpan) minY = Math.max(0, maxY - desiredSpan);
+
+    function show(event) {
+      const bounds = svg.getBoundingClientRect();
+      const pointerX = Math.max(0, Math.min(bounds.width, event.clientX - bounds.left));
+      const time = minTime + pointerX / Math.max(1, bounds.width) * (maxTime - minTime);
+      let index = 0;
+      for (let i = 1; i < samples.length; i++) if (Math.abs(Number(samples[i].timestamp) - time) < Math.abs(Number(samples[index].timestamp) - time)) index = i;
+      const sample = samples[index], previous = index ? samples[index - 1] : null;
+      const x = left + (Number(sample.timestamp) - minTime) / Math.max(1, maxTime - minTime) * (viewWidth - left - right);
+      const y = top + (maxY - Number(sample.used || 0)) / Math.max(1, maxY - minY) * (viewHeight - top - bottom);
+      line.setAttribute('x1', x); line.setAttribute('x2', x); marker.setAttribute('cx', x); marker.setAttribute('cy', y);
+      const change = previous ? Number(sample.used || 0) - Number(previous.used || 0) : null;
+      tooltip.innerHTML = '<strong>' + escape(new Date(Number(sample.timestamp) * 1000).toLocaleString()) + '</strong><span>Used ' + bytes(sample.used) + ' · Free ' + bytes(sample.free) + '</span>' + (change === null ? '' : '<span>Change ' + (change >= 0 ? '+' : '−') + bytes(Math.abs(change)) + '</span>');
+      crosshair.classList.add('visible'); tooltip.classList.add('visible');
+      const tooltipWidth = tooltip.offsetWidth;
+      tooltip.style.left = Math.max(6, Math.min(bounds.width - tooltipWidth - 6, x / viewWidth * bounds.width - tooltipWidth / 2)) + 'px';
+    }
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerleave', () => { crosshair.classList.remove('visible'); tooltip.classList.remove('visible'); });
+  }
+
+  function dotGraph(values) {
+    const padded = Array(Math.max(0, 32 - values.length)).fill(0).concat(values).slice(-32);
+    const glyphs = '⣀⣀⣄⣆⣇⣧⣷⣿';
+    const max = Math.max(...padded, 1), idle = Math.max(...padded) < 1;
+    return '<span class="sh-dotgraph' + (idle ? ' idle' : '') + '" aria-hidden="true">' + padded.map((value, index) => {
+      const level = idle ? 0 : Math.min(glyphs.length - 1, Math.round(value / max * (glyphs.length - 1)));
+      return '<i style="opacity:' + (.28 + .72 * index / (padded.length - 1)).toFixed(2) + '">' + glyphs[level] + '</i>';
+    }).join('') + '</span>';
+  }
+
+  function render(root, payload) {
     const current = payload.current;
     if (!current) { root.innerHTML = '<div class="sh-empty">Storage capacity is unavailable while the array or pools are stopped.</div>'; return; }
-    const io = payload.io || {}; const history = root._shIo || {read:[], write:[]}; history.read.push(Number(io.read_per_second || 0)); history.write.push(Number(io.write_per_second || 0)); history.read = history.read.slice(-24); history.write = history.write.slice(-24); root._shIo = history;
-    const percent = current.total ? Math.round(Number(current.used) / Number(current.total) * 100) : 0;
-    const growthClass = Number.isFinite(payload.growth_per_day) && payload.growth_per_day !== 0 ? '' : ' neutral';
-    root.innerHTML = (compact ? '' : '<div class="sh-ranges">'+['24h','7d','30d','90d','1y','all'].map(r => '<button data-range="'+r+'" class="'+(r===payload.range?'active':'')+'">'+r+'</button>').join('')+'</div>')+
-      '<div class="sh-capacity"><div class="sh-capacity-main"><span class="sh-kicker">Capacity</span><strong>'+percent+'%</strong><span class="sh-capacity-unit">used</span></div><span class="sh-growth'+growthClass+'">'+growth(payload.growth_per_day)+'</span></div>'+graph(payload.samples) + '<div class="sh-stats"><div><span>Used</span><strong>'+bytes(current.used)+'</strong></div><div><span>Free</span><strong>'+bytes(current.free)+'</strong></div><div><span>Total</span><strong>'+bytes(current.total)+'</strong></div></div><div class="sh-live"><span class="sh-live-title">Live I/O</span><span class="sh-io sh-io-read">↓ '+bytes(io.read_per_second)+'/s '+dotGraph(history.read)+'</span><span class="sh-io sh-io-write">↑ '+bytes(io.write_per_second)+'/s '+dotGraph(history.write)+'</span></div>';
-    root.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click', () => load(root, button.dataset.range, compact)));
+    const io = payload.io || {};
+    const ioHistory = root._shIo || {read:[], write:[]};
+    ioHistory.read.push(Number(io.read_per_second || 0)); ioHistory.write.push(Number(io.write_per_second || 0));
+    ioHistory.read = ioHistory.read.slice(-32); ioHistory.write = ioHistory.write.slice(-32); root._shIo = ioHistory;
+    const percent = current.total ? Math.max(0, Math.min(100, Number(current.used) / Number(current.total) * 100)) : 0;
+    const growthText = growthContext(payload, current);
+    const growthNeutral = !Number.isFinite(Number(payload.growth_per_day)) || Math.abs(Number(payload.growth_per_day)) < 1;
+
+    root.innerHTML = '<div class="sh-summary"><div class="sh-capacity"><span class="sh-kicker">Capacity</span><strong>' + Math.round(percent) + '%</strong><span>used</span></div><div class="sh-growth' + (growthNeutral ? ' neutral' : '') + '">' + escape(growthText) + '</div></div>' +
+      '<div class="sh-utilization" role="progressbar" aria-label="Storage capacity used" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(percent) + '"><i style="width:' + percent.toFixed(2) + '%"></i></div>' +
+      '<div class="sh-chart-head"><span class="sh-chart-title">Used-space history</span>' + rangeButtons(payload.range) + historyStatus(payload.history) + '</div>' +
+      graph(payload.samples || []) +
+      '<div class="sh-stats"><div><span>Used</span><strong>' + bytes(current.used) + '</strong></div><div><span>Free</span><strong>' + bytes(current.free) + '</strong></div><div><span>Total</span><strong>' + bytes(current.total) + '</strong></div></div>' +
+      '<div class="sh-live"><span class="sh-live-title">Live I/O</span><span class="sh-io sh-io-read"><b>↓ ' + bytes(io.read_per_second) + '/s</b>' + dotGraph(ioHistory.read) + '</span><span class="sh-io sh-io-write"><b>↑ ' + bytes(io.write_per_second) + '/s</b>' + dotGraph(ioHistory.write) + '</span></div>';
+    root.dataset.loaded = 'yes';
+    root.querySelectorAll('[data-range]').forEach(button => button.addEventListener('click', () => { root.dataset.range = button.dataset.range; load(root, button.dataset.range); }));
+    bindGraph(root, payload.samples || []);
   }
-  function load(root, range, compact) { root.innerHTML = '<div class="sh-empty">Loading…</div>'; fetch(endpoint + '?range=' + encodeURIComponent(range), {cache:'no-store'}).then(r => r.ok ? r.json() : Promise.reject()).then(p => render(root, p, compact)).catch(() => root.innerHTML = '<div class="sh-empty">Unable to load storage history.</div>'); }
-  document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-storage-history]').forEach(root => { const range = root.dataset.range || '30d', compact = root.dataset.compact === 'yes'; load(root, range, compact); if (compact) setInterval(() => load(root, range, compact), 5000); }));
+
+  function load(root, range) {
+    if (!root.dataset.loaded) root.innerHTML = '<div class="sh-empty">Loading…</div>';
+    fetch(endpoint + '?range=' + encodeURIComponent(range), {cache:'no-store'})
+      .then(response => response.ok ? response.json() : Promise.reject())
+      .then(payload => render(root, payload))
+      .catch(() => { if (!root.dataset.loaded) root.innerHTML = '<div class="sh-empty">Unable to load storage history.</div>'; });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-storage-history]').forEach(root => {
+    root.dataset.range = root.dataset.range || '30d';
+    load(root, root.dataset.range);
+    if (root.dataset.compact === 'yes') setInterval(() => load(root, root.dataset.range), 5000);
+  }));
 }());

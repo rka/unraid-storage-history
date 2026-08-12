@@ -18,7 +18,7 @@ The Dashboard’s Content Manager lets you place the **Storage History** tile wh
 - An hourly sample by default, configurable from 15 minutes to daily.
 - A 365-day history by default, stored at `/mnt/user/system/storage-history/history.json` so normal sampling does not write to the USB boot device.
 
-The tile includes a used-space graph, current figures, and average growth per day. It displays a useful empty state until enough samples have been collected.
+The tile includes an adaptively scaled used-space graph, hover details, current figures, selectable time ranges, and average growth per day. Once a selected range contains at least seven days of data, positive growth also includes an estimated time remaining. Live read/write meters and collection freshness stay visible without requiring another page.
 
 ## Notes
 

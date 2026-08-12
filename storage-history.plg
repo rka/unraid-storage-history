@@ -2,23 +2,24 @@
 <!DOCTYPE PLUGIN [
 <!ENTITY name "storage-history">
 <!ENTITY author "rka">
-<!ENTITY version "0.1.7">
-<!ENTITY date "2026-08-08">
+<!ENTITY version "0.2.0">
+<!ENTITY date "2026-08-12">
 <!ENTITY pluginURL "https://raw.githubusercontent.com/rka/unraid-storage-history/main/storage-history.plg">
 ]>
 <PLUGIN name="&name;" author="&author;" version="&version;" date="&date;" min="7.0.0" pluginURL="&pluginURL;" support="https://github.com/rka/unraid-storage-history/issues" icon="hdd-o">
 <CHANGES>
 # Version &version; &date;
 
-* Refresh the Dashboard capacity summary and live I/O presentation.
+* Add adaptive scaling, hover details, time ranges, capacity forecasting, and data-health states.
+* Improve responsive, theme-aware Dashboard styling and live I/O idle presentation.
 </CHANGES>
-<FILE Name="/usr/local/emhttp/plugins/storage-history/include/history.php"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/include/history.php</URL><SHA256>006c23bd79e947aa5dc51080ec9488d48d2755b833910cb86aff8070e1cf8bb8</SHA256></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/include/history.php"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/include/history.php</URL><SHA256>481fbea4a98a4c0feb146f88f8545944f68e4a6cd18768f19f5faa5b716f0adf</SHA256></FILE>
 <FILE Name="/usr/local/emhttp/plugins/storage-history/include/api.php"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/include/api.php</URL><SHA256>36f7d708636ac616be10c8d932767f1f090bcdd7c79327de5101099492063681</SHA256></FILE>
-<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.js"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/assets/storage-history.js</URL><SHA256>03bd1bb06ceadcf7df09624679be083c71d323aa21becdad3dce21b4c5167739</SHA256></FILE>
-<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.css"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/assets/storage-history.css</URL><SHA256>bc4c39487afca9e4052bd0b28d9a6ba4882cdb784395969cdc0319dcd8001860</SHA256></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.js"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/assets/storage-history.js</URL><SHA256>d07d9430f9e12a53ec9dcd677548b7e5fdabea40c94321211e6419a7daabf49a</SHA256></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/assets/storage-history.css"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/assets/storage-history.css</URL><SHA256>c592216790cc60ecf5440802cb08149c2021ba45f0f44fdb4e7c7da587c2b1ae</SHA256></FILE>
 <FILE Name="/usr/local/emhttp/plugins/storage-history/scripts/collector"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/scripts/collector</URL><SHA256>c3fb2129262d5759f963d19ae0261b804e00e12cbb2a46b50fe15e8113c42994</SHA256></FILE>
 <FILE Name="/usr/local/emhttp/plugins/storage-history/scripts/update-cron"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/scripts/update-cron</URL><SHA256>196a900adac1cfd958dfd3c3a8a3b8075fcd36d4509e6a3c735ba1b310b5acfe</SHA256></FILE>
-<FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistoryDashboard.page"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/pages/StorageHistoryDashboard.page</URL><SHA256>8faa35e33b019f7f77c134b62d031ee603f3e3de5f20feb34c4d785b4f6adc82</SHA256></FILE>
+<FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistoryDashboard.page"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/pages/StorageHistoryDashboard.page</URL><SHA256>1634b9154efb778c2ae8f1fe5db4a093be3b44940eefef125e19bcd2e11c86f3</SHA256></FILE>
 <FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistorySettings.page"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/pages/StorageHistorySettings.page</URL><SHA256>3999d56e0abd7db3508b5412723d422594fdb8a71f9e83e2ddb025cec25edcfd</SHA256></FILE>
 <FILE Name="/usr/local/emhttp/plugins/storage-history/StorageHistorySettingsMenu.page"><URL>https://raw.githubusercontent.com/rka/unraid-storage-history/main/src/pages/StorageHistorySettingsMenu.page</URL><SHA256>09b579c008a77601a8fd353638f2c4e959a11d0d8fa6b7f801273f88a00e4bed</SHA256></FILE>
 <FILE Run="/bin/bash" Method="install"><INLINE><![CDATA[

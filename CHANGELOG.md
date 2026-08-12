@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.0 — 2026-08-12
+
+- Use adaptive chart scaling with hover details for date, used, free, and sample-to-sample change.
+- Add Dashboard range controls, a utilization strip, and credible remaining-capacity estimates.
+- Improve live I/O idle states, responsive layouts, theme integration, and collection freshness indicators.
+
+## 0.1.7 — 2026-08-08
+
+- Refresh the Dashboard capacity summary and live I/O presentation.
+
+## 0.1.6 — 2026-08-08
+
+- Balance the Dashboard live I/O meters across the tile width.
+
 ## 0.1.5 — 2026-08-08
 
 - Use a compact btop-style dot meter for live disk I/O.

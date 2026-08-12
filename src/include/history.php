@@ -97,13 +97,34 @@ function sh_payload(string $range): array {
     $range = array_key_exists($range, $seconds) ? $range : '30d';
     $cutoff = $seconds[$range] === PHP_INT_MAX ? 0 : time() - $seconds[$range];
     $samples = array_values(array_filter($history['samples'], fn($row) => is_array($row) && ($row['timestamp'] ?? 0) >= $cutoff));
+    $rangeSpan = count($samples) >= 2 ? max(0, (int)($samples[count($samples) - 1]['timestamp'] ?? 0) - (int)($samples[0]['timestamp'] ?? 0)) : 0;
     $current = sh_current_sample();
     $growth = null;
+    $allSamples = array_values(array_filter($history['samples'], fn($row) => is_array($row) && isset($row['timestamp'])));
+    $firstTimestamp = $allSamples ? (int)($allSamples[0]['timestamp'] ?? 0) : 0;
+    $lastTimestamp = $allSamples ? (int)($allSamples[count($allSamples) - 1]['timestamp'] ?? 0) : 0;
+    $historySpan = max(0, $lastTimestamp - $firstTimestamp);
     if (count($samples) >= 2) {
         $first = $samples[0]; $last = $samples[count($samples)-1]; $duration = ($last['timestamp'] ?? 0) - ($first['timestamp'] ?? 0);
         if ($duration >= 86400) $growth = (($last['used'] ?? 0) - ($first['used'] ?? 0)) * 86400 / $duration;
     }
-    return ['current' => $current, 'samples' => $samples, 'growth_per_day' => $growth, 'range' => $range, 'io' => sh_io_rates()];
+    $intervalSeconds = ['15min'=>900, '30min'=>1800, 'hourly'=>3600, '6hourly'=>21600, '12hourly'=>43200, 'daily'=>86400][$config['interval'] ?? 'hourly'] ?? 3600;
+    $status = ($config['enabled'] ?? 'yes') !== 'yes' ? 'paused' : (count($allSamples) < 2 ? 'collecting' : 'ready');
+    if ($status === 'ready' && $lastTimestamp > 0 && time() - $lastTimestamp > max(10800, (int)($intervalSeconds * 2.5))) $status = 'stale';
+    return [
+        'current' => $current,
+        'samples' => $samples,
+        'growth_per_day' => $growth,
+        'range' => $range,
+        'io' => sh_io_rates(),
+        'history' => [
+            'status' => $status,
+            'sample_count' => count($allSamples),
+            'span_seconds' => $historySpan,
+            'range_span_seconds' => $rangeSpan,
+            'last_sample_at' => $lastTimestamp ?: null,
+        ],
+    ];
 }
 
 /** Return aggregate physical-disk throughput. Baselines are held in RAM only. */
