@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 — 2026-08-12
+
+- Correct normalized source checksums for reliable UI and CLI updates.
+
 ## 0.2.0 — 2026-08-12
 
 - Use adaptive chart scaling with hover details for date, used, free, and sample-to-sample change.
